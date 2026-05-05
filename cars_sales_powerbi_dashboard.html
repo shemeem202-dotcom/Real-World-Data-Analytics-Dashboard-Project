@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Sales | Power BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --pbi-bg: #1a1f36;
+  --pbi-sidebar: #141828;
+  --pbi-card: #1e2440;
+  --pbi-card2: #232b4a;
+  --pbi-border: #2e3760;
+  --pbi-yellow: #f2c811;
+  --pbi-blue: #118dff;
+  --pbi-teal: #12b5c9;
+  --pbi-orange: #e8823a;
+  --pbi-green: #38b86e;
+  --pbi-red: #e84040;
+  --pbi-purple: #8764b8;
+  --text: #d0d6f0;
+  --muted: #6e7ba8;
+  --white: #ffffff;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--pbi-bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--pbi-sidebar);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  border-bottom: 2px solid var(--pbi-yellow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-logo .logo-icon {
+  width: 28px; height: 28px;
+  background: var(--pbi-yellow);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; color: #111;
+}
+
+.topbar-logo span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.02em;
+}
+
+.topbar-sep { width: 1px; height: 22px; background: var(--pbi-border); margin: 0 4px; }
+
+.topbar-title {
+  font-size: 0.82rem;
+  color: var(--muted);
+  flex: 1;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tb-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tb-btn:hover { background: rgba(255,255,255,0.12); }
+.tb-btn.active { background: var(--pbi-yellow); color: #111; border-color: var(--pbi-yellow); font-weight: 600; }
+
+.dot-status {
+  width: 8px; height: 8px;
+  background: var(--pbi-green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--pbi-green);
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 44px);
+}
+
+/* ── LEFT PANEL (Filters) ── */
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--pbi-sidebar);
+  border-right: 1px solid var(--pbi-border);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panel-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.slicer {
+  background: var(--pbi-card);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.slicer-header {
+  background: rgba(242,200,17,0.08);
+  border-bottom: 1px solid var(--pbi-border);
+  padding: 7px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--pbi-yellow);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.slicer-header::before {
+  content: '▾';
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.slicer-body { padding: 6px 0; max-height: 160px; overflow-y: auto; }
+
+.slicer-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: var(--text);
+}
+
+.slicer-item:hover { background: rgba(255,255,255,0.05); }
+.slicer-item.selected { color: var(--pbi-yellow); }
+
+.slicer-item input[type="checkbox"] {
+  accent-color: var(--pbi-yellow);
+  width: 12px; height: 12px;
+}
+
+.slicer-body::-webkit-scrollbar { width: 4px; }
+.slicer-body::-webkit-scrollbar-thumb { background: var(--pbi-border); border-radius: 2px; }
+
+/* ── MAIN CANVAS ── */
+.main {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-x: hidden;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--pbi-card);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  border-left: 4px solid var(--pbi-yellow);
+}
+
+.page-header-left h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.01em;
+}
+
+.page-header-left p {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.page-header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.tag {
+  background: rgba(242,200,17,0.12);
+  color: var(--pbi-yellow);
+  border: 1px solid rgba(242,200,17,0.3);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+/* ── KPI CARDS ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.kpi-card {
+  background: var(--pbi-card);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  padding: 14px 14px 12px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.kpi-card:hover {
+  border-color: var(--pbi-yellow);
+  transform: translateY(-1px);
+}
+
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+}
+
+.kpi-card.c1::after { background: var(--pbi-yellow); }
+.kpi-card.c2::after { background: var(--pbi-blue); }
+.kpi-card.c3::after { background: var(--pbi-teal); }
+.kpi-card.c4::after { background: var(--pbi-red); }
+.kpi-card.c5::after { background: var(--pbi-purple); }
+
+.kpi-label {
+  font-size: 0.66rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--white);
+}
+
+.kpi-sub {
+  margin-top: 4px;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.kpi-sub.neg { color: var(--pbi-red); }
+.kpi-sub.pos { color: var(--pbi-green); }
+
+.kpi-icon {
+  position: absolute;
+  top: 12px; right: 12px;
+  font-size: 1.3rem;
+  opacity: 0.15;
+}
+
+/* ── CHART GRID ── */
+.chart-row {
+  display: grid;
+  gap: 12px;
+}
+
+.r2 { grid-template-columns: 1.4fr 1fr; }
+.r3 { grid-template-columns: 1.2fr 1fr 1fr; }
+.r2b { grid-template-columns: 1fr 1fr; }
+
+/* ── VISUAL CARD ── */
+.vis {
+  background: var(--pbi-card);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s;
+}
+
+.vis:hover { border-color: rgba(242,200,17,0.3); }
+
+.vis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.vis-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vis-title::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: var(--pbi-yellow);
+  border-radius: 2px;
+}
+
+.vis-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.vis-btn {
+  width: 22px; height: 22px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--pbi-border);
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.vis-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+/* ── BAR RANKED LIST ── */
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rank-item { }
+
+.rank-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  margin-bottom: 4px;
+  align-items: center;
+}
+
+.rank-num {
+  font-size: 0.58rem;
+  color: var(--muted);
+  background: var(--pbi-card2);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+.rank-bar-track {
+  height: 5px;
+  background: var(--pbi-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.rank-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--pbi-blue), var(--pbi-teal));
+}
+
+/* ── TABLE ── */
+.pbi-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+
+.pbi-table thead tr {
+  background: var(--pbi-card2);
+  border-bottom: 2px solid var(--pbi-yellow);
+}
+
+.pbi-table th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--pbi-yellow);
+  white-space: nowrap;
+}
+
+.pbi-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(46,55,96,0.5);
+  color: var(--text);
+}
+
+.pbi-table tr:hover td { background: rgba(242,200,17,0.04); }
+.pbi-table tr:last-child td { border-bottom: none; }
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+.pill-blue { background: rgba(17,141,255,0.15); color: var(--pbi-blue); }
+.pill-yellow { background: rgba(242,200,17,0.15); color: var(--pbi-yellow); }
+.pill-green { background: rgba(56,184,110,0.15); color: var(--pbi-green); }
+.pill-red { background: rgba(232,64,64,0.15); color: var(--pbi-red); }
+
+.amt { font-weight: 600; color: var(--pbi-yellow); }
+
+/* ── DONUT LEGEND ── */
+.donut-layout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.donut-layout canvas { flex: 0 0 120px; height: 120px !important; }
+
+.legend-list { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+}
+
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-pct { margin-left: auto; color: var(--muted); font-size: 0.64rem; }
+
+/* ── GAUGE ── */
+.gauge-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.gauge-block {
+  flex: 1;
+  min-width: 100px;
+  background: var(--pbi-card2);
+  border: 1px solid var(--pbi-border);
+  border-radius: 4px;
+  padding: 12px;
+  text-align: center;
+}
+
+.gauge-svg-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-center-text {
+  position: absolute;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.gauge-name {
+  margin-top: 6px;
+  font-size: 0.63rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── COLOR BARS ── */
+.color-bars { display: flex; flex-direction: column; gap: 7px; }
+.cb-row { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; }
+.cb-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.cb-track { flex: 1; height: 10px; background: var(--pbi-border); border-radius: 2px; overflow: hidden; }
+.cb-fill { height: 100%; border-radius: 2px; }
+.cb-val { color: var(--muted); font-size: 0.65rem; min-width: 22px; text-align: right; }
+
+/* ── FOOTER / PAGE TABS ── */
+.page-tabs {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 32px;
+  background: var(--pbi-sidebar);
+  border-top: 1px solid var(--pbi-border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 2px;
+  z-index: 100;
+}
+
+.ptab {
+  padding: 5px 14px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 3px 3px 0 0;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ptab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.ptab.active {
+  background: var(--pbi-card);
+  color: var(--pbi-yellow);
+  border-color: var(--pbi-border);
+  font-weight: 600;
+}
+
+.ptab-add {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 0 8px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.footer-info {
+  margin-left: auto;
+  font-size: 0.62rem;
+  color: var(--muted);
+  padding-right: 8px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--pbi-bg); }
+::-webkit-scrollbar-thumb { background: var(--pbi-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── CANVAS HEIGHT FIXES ── */
+.chart-wrap { position: relative; flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-icon">PBI</div>
+    <span>Power BI Desktop</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-title">Cars_Sales_Dataset.xlsx — Car Sales Analytics Report</div>
+  <div class="topbar-actions">
+    <div class="dot-status"></div>
+    <span style="font-size:0.65rem;color:var(--muted);margin-right:4px">Live</span>
+    <button class="tb-btn active">Report View</button>
+    <button class="tb-btn">Data View</button>
+    <button class="tb-btn">Model View</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR FILTERS -->
+  <div class="sidebar">
+    <div>
+      <div class="panel-title">⧉ Filters</div>
+
+      <!-- Year Slicer -->
+      <div class="slicer">
+        <div class="slicer-header">Year</div>
+        <div class="slicer-body">
+          <label class="slicer-item selected"><input type="checkbox" checked onchange="filterYear(2013,this)"> 2013</label>
+          <label class="slicer-item selected"><input type="checkbox" checked onchange="filterYear(2014,this)"> 2014</label>
+          <label class="slicer-item selected"><input type="checkbox" checked onchange="filterYear(2015,this)"> 2015</label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Make Slicer -->
+      <div class="slicer">
+        <div class="slicer-header">Make</div>
+        <div class="slicer-body" id="makeSlicer">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Body Type Slicer -->
+      <div class="slicer">
+        <div class="slicer-header">Body Type</div>
+        <div class="slicer-body">
+          <label class="slicer-item"><input type="checkbox"> Sedan</label>
+          <label class="slicer-item"><input type="checkbox"> SUV</label>
+          <label class="slicer-item"><input type="checkbox"> Coupe</label>
+          <label class="slicer-item"><input type="checkbox"> Convertible</label>
+          <label class="slicer-item"><input type="checkbox"> Wagon</label>
+          <label class="slicer-item"><input type="checkbox"> Hatchback</label>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <div style="font-size:0.62rem;color:var(--muted);text-align:center;line-height:1.6">
+        Last Refreshed<br>
+        <span style="color:var(--pbi-yellow)">Today, 09:00 AM</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CANVAS -->
+  <div class="main" style="padding-bottom:50px">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>🚗 Car Sales Analytics Dashboard</h2>
+        <p>California Auction Market · 199 Vehicles · FY 2013–2015</p>
+      </div>
+      <div class="page-header-right">
+        <span class="tag">Q4 2014 Peak</span>
+        <span class="tag">CA Only</span>
+        <span>▼ All Filters Active</span>
+      </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi-card c1">
+        <div class="kpi-icon">🚘</div>
+        <div class="kpi-label">Total Vehicles</div>
+        <div class="kpi-value">199</div>
+        <div class="kpi-sub">Units in dataset</div>
+      </div>
+      <div class="kpi-card c2">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-label">Avg Selling Price</div>
+        <div class="kpi-value">$25,234</div>
+        <div class="kpi-sub">Per vehicle sold</div>
+      </div>
+      <div class="kpi-card c3">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-label">Avg MMR Value</div>
+        <div class="kpi-value">$26,625</div>
+        <div class="kpi-sub">Market reference rate</div>
+      </div>
+      <div class="kpi-card c4">
+        <div class="kpi-icon">📉</div>
+        <div class="kpi-label">Avg MMR Discount</div>
+        <div class="kpi-value" style="color:var(--pbi-red)">-$1,391</div>
+        <div class="kpi-sub neg">Below market avg</div>
+      </div>
+      <div class="kpi-card c5">
+        <div class="kpi-icon">🛞</div>
+        <div class="kpi-label">Avg Odometer</div>
+        <div class="kpi-value">16,666</div>
+        <div class="kpi-sub">Miles driven</div>
+      </div>
+    </div>
+
+    <!-- ROW 1: Clustered Bar + Donut + Gauge -->
+    <div class="chart-row r3">
+      <!-- Sales by Make -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Volume by Make</div>
+          <div class="vis-actions">
+            <div class="vis-btn">⋮</div><div class="vis-btn">⤡</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:190px">
+          <canvas id="makeChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Body Distribution -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Body Type Split</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div></div>
+        </div>
+        <div class="donut-layout" style="flex:1">
+          <canvas id="bodyChart" style="flex:0 0 120px;height:120px!important"></canvas>
+          <div class="legend-list" id="bodyLegend"></div>
+        </div>
+      </div>
+
+      <!-- Condition Gauges -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Key Metrics</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-block">
+            <div class="gauge-svg-wrap">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+                <circle cx="36" cy="36" r="28" fill="none" stroke="#f2c811" stroke-width="7"
+                  stroke-dasharray="105.6 70.4" stroke-dashoffset="17.6" stroke-linecap="round"
+                  transform="rotate(-90 36 36)"/>
+              </svg>
+              <div class="gauge-center-text">62%</div>
+            </div>
+            <div class="gauge-name">Condition Score</div>
+          </div>
+          <div class="gauge-block">
+            <div class="gauge-svg-wrap">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+                <circle cx="36" cy="36" r="28" fill="none" stroke="#12b5c9" stroke-width="7"
+                  stroke-dasharray="168.7 7.5" stroke-dashoffset="17.6" stroke-linecap="round"
+                  transform="rotate(-90 36 36)"/>
+              </svg>
+              <div class="gauge-center-text">96%</div>
+            </div>
+            <div class="gauge-name">Auto Rate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Price vs MMR clustered + Year trend + Transmission -->
+    <div class="chart-row r2b">
+      <!-- Price vs MMR -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Avg Selling Price vs MMR by Make</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div><div class="vis-btn">⤡</div></div>
+        </div>
+        <div class="chart-wrap" style="height:185px">
+          <canvas id="priceVsMmrChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Color breakdown -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Inventory by Color</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div></div>
+        </div>
+        <div class="color-bars" style="flex:1;justify-content:center" id="colorBars"></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Ranked Price List + Sellers Table -->
+    <div class="chart-row r2b">
+      <!-- Avg Price by Make Ranked -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Avg Selling Price by Make</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div></div>
+        </div>
+        <div class="rank-list" id="rankList"></div>
+      </div>
+
+      <!-- Top Sellers Table -->
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Top Sellers — Detail View</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div><div class="vis-btn">⤡</div></div>
+        </div>
+        <table class="pbi-table">
+          <thead>
+            <tr>
+              <th>Seller</th>
+              <th>Units</th>
+              <th>Avg Price</th>
+              <th>Tier</th>
+            </tr>
+          </thead>
+          <tbody id="sellerTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ROW 4: Year bar chart -->
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="vis">
+        <div class="vis-header">
+          <div class="vis-title">Sales Volume & Avg Price by Year</div>
+          <div class="vis-actions"><div class="vis-btn">⋮</div><div class="vis-btn">⤡</div></div>
+        </div>
+        <div class="chart-wrap" style="height:140px">
+          <canvas id="yearChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE TABS -->
+<div class="page-tabs">
+  <div class="ptab active">📊 Overview</div>
+  <div class="ptab">💵 Pricing</div>
+  <div class="ptab">🏷️ By Make</div>
+  <div class="ptab">📍 Location</div>
+  <div class="ptab-add">+</div>
+  <div class="footer-info">Cars_Sales_Dataset.xlsx · 199 rows · 16 columns · Page 1 of 4</div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────
+const makes = ["Hyundai","Infiniti","Chevrolet","BMW","Kia","Audi","Volvo","Nissan","Acura","Cadillac","Ford","Lexus","Buick"];
+const makeCount = [44,43,28,27,21,10,9,7,3,2,2,2,1];
+
+const byMakePrice = [
+  {make:"BMW", avg_price:55037, avg_mmr:56193},
+  {make:"Cadillac", avg_price:37000, avg_mmr:41450},
+  {make:"Audi", avg_price:36505, avg_mmr:38730},
+  {make:"Volvo", avg_price:30083, avg_mmr:30689},
+  {make:"Acura", avg_price:27717, avg_mmr:27383},
+  {make:"Infiniti", avg_price:23936, avg_mmr:24105},
+  {make:"Kia", avg_price:22774, avg_mmr:22188},
+  {make:"Chevrolet", avg_price:16450, avg_mmr:19888},
+];
+
+const bodyData = [
+  {body:"Sedan", count:85},
+  {body:"SUV", count:36},
+  {body:"G Sedan", count:33},
+  {body:"Coupe", count:13},
+  {body:"Convertible", count:9},
+  {body:"Other", count:23},
+];
+
+const colorData = [
+  {color:"White", count:60, hex:"#f5f5f5"},
+  {color:"Black", count:42, hex:"#2a2a2a"},
+  {color:"Gray", count:38, hex:"#8a8a8a"},
+  {color:"Silver", count:29, hex:"#c8c8c8"},
+  {color:"Blue", count:10, hex:"#3a7bd5"},
+  {color:"Red", count:9, hex:"#d94040"},
+  {color:"Beige", count:2, hex:"#d4b896"},
+];
+
+const sellers = [
+  {seller:"Nissan Infiniti LT", count:41, price:23909, tier:"platinum"},
+  {seller:"Enterprise Vehicle Exchange", count:30, price:10385, tier:"standard"},
+  {seller:"Kia Motors America", count:19, price:23224, tier:"gold"},
+  {seller:"Hyundai Motor America", count:14, price:19493, tier:"gold"},
+  {seller:"Financial Services Remarketing", count:12, price:46038, tier:"platinum"},
+];
+
+// ─── CHART DEFAULTS ───────────────────────────────────────────────────
+Chart.defaults.color = '#6e7ba8';
+Chart.defaults.font.family = 'Inter, Segoe UI, sans-serif';
+Chart.defaults.font.size = 10;
+
+const Y = '#f2c811';
+const B = '#118dff';
+const T = '#12b5c9';
+const G = '#38b86e';
+const O = '#e8823a';
+const R = '#e84040';
+const P = '#8764b8';
+const PALETTE = [Y,B,T,G,O,R,P,'#ff6b9d','#4ecdc4','#ffd93d'];
+
+// Grid color
+const gridColor = 'rgba(46,55,96,0.6)';
+
+// ─── MAKE BAR ─────────────────────────────────────────────────────────
+new Chart(document.getElementById('makeChart'), {
+  type:'bar',
+  data:{
+    labels:makes,
+    datasets:[{
+      label:'Units Sold',
+      data:makeCount,
+      backgroundColor: makes.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'),
+      borderColor: makes.map((_,i)=>PALETTE[i%PALETTE.length]),
+      borderWidth:1,
+      borderRadius:3,
+      barThickness:16,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw} vehicles`}}},
+    scales:{
+      x:{grid:{color:gridColor}, ticks:{font:{size:9}}},
+      y:{grid:{color:gridColor}, beginAtZero:true}
+    }
+  }
+});
+
+// ─── BODY DOUGHNUT ────────────────────────────────────────────────────
+const total = bodyData.reduce((s,d)=>s+d.count,0);
+new Chart(document.getElementById('bodyChart'), {
+  type:'doughnut',
+  data:{
+    labels:bodyData.map(d=>d.body),
+    datasets:[{
+      data:bodyData.map(d=>d.count),
+      backgroundColor:PALETTE.map(c=>c+'cc'),
+      borderColor:'#1e2440',
+      borderWidth:3,
+      hoverOffset:6,
+    }]
+  },
+  options:{
+    responsive:false, cutout:'65%',
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}`}}}
+  }
+});
+
+const bl = document.getElementById('bodyLegend');
+bodyData.forEach((d,i)=>{
+  const pct = Math.round(d.count/total*100);
+  bl.innerHTML += `<div class="legend-row">
+    <div class="legend-dot" style="background:${PALETTE[i%PALETTE.length]}"></div>
+    <span>${d.body}</span>
+    <span class="legend-pct">${d.count} <span style="color:${PALETTE[i%PALETTE.length]}">${pct}%</span></span>
+  </div>`;
+});
+
+// ─── PRICE VS MMR ────────────────────────────────────────────────────
+new Chart(document.getElementById('priceVsMmrChart'), {
+  type:'bar',
+  data:{
+    labels:byMakePrice.map(d=>d.make),
+    datasets:[
+      {
+        label:'Selling Price',
+        data:byMakePrice.map(d=>d.avg_price),
+        backgroundColor:Y+'bb',
+        borderColor:Y,
+        borderWidth:1,
+        borderRadius:3,
+        barThickness:14,
+      },
+      {
+        label:'MMR Value',
+        data:byMakePrice.map(d=>d.avg_mmr),
+        backgroundColor:B+'bb',
+        borderColor:B,
+        borderWidth:1,
+        borderRadius:3,
+        barThickness:14,
+      }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top', labels:{font:{size:10},boxWidth:10,padding:10}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: $${c.raw.toLocaleString()}`}}
+    },
+    scales:{
+      x:{grid:{color:gridColor}, ticks:{font:{size:9}}},
+      y:{grid:{color:gridColor}, beginAtZero:false, ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// ─── YEAR CHART ──────────────────────────────────────────────────────
+new Chart(document.getElementById('yearChart'), {
+  type:'bar',
+  data:{
+    labels:['2013','2014','2015'],
+    datasets:[
+      {
+        label:'Units',
+        data:[77,66,56],
+        backgroundColor:[Y+'bb',T+'bb',G+'bb'],
+        borderColor:[Y,T,G],
+        borderWidth:1,
+        borderRadius:4,
+        barThickness:40,
+        yAxisID:'y',
+      },
+      {
+        type:'line',
+        label:'Avg Price ($)',
+        data:[20027,35733,20020],
+        borderColor:O,
+        backgroundColor:O+'22',
+        borderWidth:2,
+        pointBackgroundColor:O,
+        pointRadius:4,
+        tension:0.3,
+        yAxisID:'y1',
+        fill:true,
+      }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top', labels:{font:{size:10},boxWidth:10,padding:12}},
+      tooltip:{callbacks:{label:c=>c.dataset.label==='Units'?` ${c.raw} vehicles`:` $${c.raw.toLocaleString()}`}}
+    },
+    scales:{
+      x:{grid:{color:gridColor}},
+      y:{grid:{color:gridColor}, beginAtZero:true, position:'left', title:{display:true,text:'Units',color:'#6e7ba8',font:{size:9}}},
+      y1:{grid:{display:false}, beginAtZero:false, position:'right', title:{display:true,text:'Avg Price',color:'#6e7ba8',font:{size:9}},
+           ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// ─── RANK LIST ───────────────────────────────────────────────────────
+const maxP = Math.max(...byMakePrice.map(d=>d.avg_price));
+const rl = document.getElementById('rankList');
+byMakePrice.forEach((d,i)=>{
+  const pct = Math.round(d.avg_price/maxP*100);
+  const col = PALETTE[i%PALETTE.length];
+  rl.innerHTML += `<div class="rank-item">
+    <div class="rank-meta">
+      <span><span class="rank-num">${String(i+1).padStart(2,'0')}</span>${d.make}</span>
+      <span style="color:${col};font-weight:600;font-size:0.72rem">$${d.avg_price.toLocaleString()}</span>
+    </div>
+    <div class="rank-bar-track">
+      <div class="rank-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${col},${col}88)"></div>
+    </div>
+  </div>`;
+});
+
+// ─── SELLERS TABLE ───────────────────────────────────────────────────
+const tierClass = {platinum:'pill-yellow',gold:'pill-blue',standard:'pill-green'};
+const sb = document.getElementById('sellerTbody');
+sellers.forEach((s,i)=>{
+  sb.innerHTML += `<tr>
+    <td>${s.seller}</td>
+    <td>${s.count}</td>
+    <td class="amt">$${s.price.toLocaleString()}</td>
+    <td><span class="pill ${tierClass[s.tier]}">${s.tier}</span></td>
+  </tr>`;
+});
+
+// ─── COLOR BARS ──────────────────────────────────────────────────────
+const maxC = Math.max(...colorData.map(d=>d.count));
+const cb = document.getElementById('colorBars');
+colorData.forEach(d=>{
+  const pct = Math.round(d.count/maxC*100);
+  cb.innerHTML += `<div class="cb-row">
+    <div class="cb-dot" style="background:${d.hex};border:1px solid rgba(255,255,255,0.15)"></div>
+    <span style="min-width:44px;font-size:0.68rem">${d.color}</span>
+    <div class="cb-track"><div class="cb-fill" style="width:${pct}%;background:${d.hex};opacity:0.8"></div></div>
+    <span class="cb-val">${d.count}</span>
+  </div>`;
+});
+
+// ─── MAKE SLICER ────────────────────────────────────────────────────
+const ms = document.getElementById('makeSlicer');
+makes.forEach(m=>{
+  ms.innerHTML += `<label class="slicer-item"><input type="checkbox"> ${m}</label>`;
+});
+
+// ─── TAB CLICK (cosmetic) ────────────────────────────────────────────
+document.querySelectorAll('.ptab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+
+// ─── TOP BUTTONS (cosmetic) ──────────────────────────────────────────
+document.querySelectorAll('.tb-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tb-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
